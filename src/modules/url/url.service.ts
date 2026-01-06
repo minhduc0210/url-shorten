@@ -1,6 +1,8 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -36,7 +38,7 @@ export class UrlService {
         where: { shortCode: customAlias },
       });
       if (existing) {
-        throw new BadRequestException('This alias has been used!');
+        throw new BadRequestException('Url tùy chỉnh đã được sử dụng');
       }
       shortCode = customAlias;
     } else {
@@ -56,8 +58,73 @@ export class UrlService {
       where: { shortCode },
     });
     if (!urlRecord) {
-      throw new NotFoundException('URL not found or has been removed.');
+      throw new NotFoundException('Url không tồn tại');
     }
     return urlRecord.longUrl;
+  }
+
+  async findAll(): Promise<Url[]> {
+    try {
+      return await this.prismaService.url.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Không thể truy xuất dữ liệu!');
+    }
+  }
+
+  async update(id: number, longUrl: string, shortCode?: string): Promise<Url> {
+    const existingUrl = await this.prismaService.url.findUnique({
+      where: { id },
+    });
+    if (!existingUrl) {
+      throw new NotFoundException(`Không tìm thấy bản ghi với ID ${id}`);
+    }
+    if (shortCode && shortCode !== existingUrl.shortCode) {
+      const duplicateCode = await this.prismaService.url.findUnique({
+        where: { shortCode },
+      });
+      if (duplicateCode) {
+        throw new ConflictException(
+          'Mã rút gọn này đã tồn tại, vui lòng chọn mã khác!',
+        );
+      }
+    }
+    try {
+      return await this.prismaService.url.update({
+        where: { id },
+        data: {
+          longUrl,
+          shortCode: shortCode || existingUrl.shortCode,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(
+        'Cập nhật thất bại, vui lòng thử lại!',
+      );
+    }
+  }
+
+  async remove(id: number): Promise<{ message: string }> {
+    const existingUrl = await this.prismaService.url.findUnique({
+      where: { id },
+    });
+
+    if (!existingUrl) {
+      throw new NotFoundException(
+        `Bản ghi với ID ${id} không tồn tại hoặc đã bị xóa trước đó.`,
+      );
+    }
+    try {
+      await this.prismaService.url.delete({
+        where: { id },
+      });
+      return { message: `Xóa thành công link: ${existingUrl.shortCode}` };
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Lỗi hệ thống khi xóa dữ liệu!');
+    }
   }
 }

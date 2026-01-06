@@ -9,19 +9,20 @@ import {
 
 export class CreateUrlDto {
   @ApiProperty({
-    description: 'This is the original url to be shortened',
+    description: 'Đây là url dài cần rút gọn',
     example: 'https://www.google.com',
   })
-  @IsUrl({}, { message: 'Invalid url' })
-  @IsNotEmpty({ message: 'Url is required' })
+  @IsUrl({}, { message: 'Đây không phải là một url hợp lệ' })
+  @IsNotEmpty({ message: 'Url không được để trống' })
   longUrl: string;
 
   @ApiProperty({
-    description: 'This is the custom alias for the shortened url',
+    description: 'Đây là url tùy chỉnh của bạn',
     example: 'my-custom-link',
   })
   @IsOptional()
-  @IsString({ message: 'Alias must be a string' })
-  @MaxLength(20, { message: 'Alias must be max of 20 characters' })
+  @IsString({ message: 'Url tùy chỉnh phải là một chuỗi' })
+  @IsNotEmpty({ message: 'Url tùy chỉnh không được để trống' })
+  @MaxLength(20, { message: 'Url tùy chỉnh không được vượt quá 20 ký tự' })
   customAlias?: string;
 }
