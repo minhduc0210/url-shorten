@@ -8,7 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { generateRandomCode } from './helpers/helper';
 import { CreateUrlDto } from './dto/create-url.dto';
-import { Url } from '@prisma/client';
+import { Url } from 'generated/prisma/client';
 
 @Injectable()
 export class UrlService {
