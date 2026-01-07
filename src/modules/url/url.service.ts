@@ -58,7 +58,7 @@ export class UrlService {
       where: { shortCode },
     });
     if (!urlRecord) {
-      throw new NotFoundException('Url không tồn tại');
+      return null;
     }
     return urlRecord.longUrl;
   }
