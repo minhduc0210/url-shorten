@@ -14,6 +14,7 @@ import { UrlService } from './url.service';
 import { CreateUrlDto } from './dto/create-url.dto';
 import express from 'express';
 import { AdminGuard } from 'src/common/guards/admin.guard';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -45,7 +46,10 @@ export class UrlAdminController {
 
 @Controller('')
 export class UrlController {
-  constructor(private readonly urlService: UrlService) {}
+  constructor(
+    private readonly urlService: UrlService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('shorten')
   async shortenUrl(@Body() createUrlDto: CreateUrlDto) {
@@ -55,8 +59,10 @@ export class UrlController {
   @Get(':code')
   async getLongUrl(@Param('code') code: string, @Res() res: express.Response) {
     const longUrl = await this.urlService.getLongUrl(code);
-    if (longUrl) {
-      res.redirect(HttpStatus.MOVED_PERMANENTLY, longUrl);
+    if (!longUrl) {
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      return res.redirect(`${frontendUrl}/404.html`);
     }
+    res.redirect(HttpStatus.MOVED_PERMANENTLY, longUrl);
   }
 }
